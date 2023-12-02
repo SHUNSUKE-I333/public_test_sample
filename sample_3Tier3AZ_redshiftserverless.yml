@@ -1,0 +1,731 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation Template Test'
+
+# ------------------------------------------------------------#
+# Input Parameters
+# ------------------------------------------------------------# 
+Parameters:
+  PJPrefix:
+    Type: String
+  RSWorkgroupName: 
+    Type: String
+    Default: default-wg
+  RSBaseCapacity: 
+    Type: Number
+    Default: 8
+  RSEnhancedVpcRouting: 
+    Type: String
+    Default: false
+  RSNamespaceName: 
+    Type: String
+    Default: default-ns
+  RSPubliclyAccessible: 
+    Type: String
+    Default: false
+  RSAdminUsername:
+    Type: String
+    Default: awsuser
+  RSAdminUserPassword:
+    Type: String
+    MinLength: 8
+    MaxLength: 41
+    AllowedPattern: "[a-zA-Z0-9]*"
+    ConstraintDescription: must contain only alphanumeric characters.
+  RSDbName: 
+    Type: String
+    Default: dev
+  RSKmsKeyId: 
+    Type: String
+    Default: #********-****-****-****-************
+# ------------------------------------------------------------#
+# Input Resources
+# ------------------------------------------------------------# 
+Resources:
+  # VPC
+    TestVPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: '10.0.0.0/16'
+        EnableDnsSupport: 'true'
+        EnableDnsHostnames: 'true'
+        InstanceTenancy: 'default'
+        Tags:
+        - Key: Name
+          Value: 'test-2301201-vpc'
+
+  # InternetGateway
+    TestInternetGateway:
+      Type: AWS::EC2::InternetGateway
+      Properties:
+        Tags:
+          - Key: Name
+            Value: 'test-231201-igw'
+    TestAttachment:
+      Type: AWS::EC2::VPCGatewayAttachment
+      Properties:
+        VpcId: !Ref TestVPC
+        InternetGatewayId: !Ref TestInternetGateway
+# ------------------------------------------------------------#
+# Subnet
+# ------------------------------------------------------------# 
+  # Subnet-public
+    TestPublicSubnet1a:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: 'ap-northeast-1a'
+        CidrBlock: '10.0.0.0/24'
+        VpcId: !Ref TestVPC
+        Tags:
+          - Key: Name
+            Value: 'test-public-1a-231201'
+    TestPublicSubnet1c:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: 'ap-northeast-1c'
+        CidrBlock: '10.0.1.0/24'
+        VpcId: !Ref TestVPC
+        Tags: 
+          - Key: Name
+            Value: 'test-public-1c-231201'
+    TestPublicSubnet1d:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: 'ap-northeast-1d'
+        CidrBlock: '10.0.2.0/24'
+        VpcId: !Ref TestVPC
+        Tags: 
+          - Key: Name
+            Value: 'test-public-1d-231201'
+  # Subnet-protected
+    TestProtectedSubnet1a:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: 'ap-northeast-1a'
+        CidrBlock: '10.0.10.0/24'
+        VpcId: !Ref TestVPC
+        Tags:
+          - Key: Name
+            Value: 'test-protected-1a-231201'
+    TestProtectedSubnet1c:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: 'ap-northeast-1c'
+        CidrBlock: '10.0.11.0/24'
+        VpcId: !Ref TestVPC
+        Tags: 
+          - Key: Name
+            Value: 'test-protected-1c-231201'
+    TestProtectedSubnet1d:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: 'ap-northeast-1d'
+        CidrBlock: '10.0.12.0/24'
+        VpcId: !Ref TestVPC
+        Tags: 
+          - Key: Name
+            Value: 'test-protected-1d-231201'
+  # Subnet-private
+    TestPrivateSubnet1a:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: 'ap-northeast-1a'
+        CidrBlock: '10.0.20.0/24'
+        VpcId: !Ref TestVPC
+        Tags:
+          - Key: Name
+            Value: 'test-private-1a-231201'
+    TestPrivateSubnet1c:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: 'ap-northeast-1c'
+        CidrBlock: '10.0.21.0/24'
+        VpcId: !Ref TestVPC
+        Tags: 
+          - Key: Name
+            Value: 'test-private-1c-231201'
+    TestPrivateSubnet1d:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: 'ap-northeast-1d'
+        CidrBlock: '10.0.22.0/24'
+        VpcId: !Ref TestVPC
+        Tags: 
+          - Key: Name
+            Value: 'test-private-1d-231201'
+# ------------------------------------------------------------#
+# Public Layer Route
+# ------------------------------------------------------------# 
+  # RouteTable-public-1a
+    TestPublicRouteTable1a:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref  TestVPC
+        Tags:
+          - Key: Name
+            Value: !Sub  test-public-rtb-1a
+
+    TestPublicRoute1a:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId: !Ref  TestPublicRouteTable1a
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId: !Ref  TestInternetGateway
+
+  # SubnetPublic to attach 1a
+    TestPublicSubnetRouteTableAssociation1a:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref TestPublicSubnet1a
+        RouteTableId: !Ref TestPublicRouteTable1a
+
+  # RouteTable-public-1c
+    TestPublicRouteTable1c:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref  TestVPC
+        Tags:
+          - Key: Name
+            Value: !Sub  test-public-rtb-1c
+
+    TestPublicRoute1c:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId: !Ref  TestPublicRouteTable1c
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId: !Ref  TestInternetGateway
+
+  # SubnetPublic to attach 1c
+    TestPublicSubnetRouteTableAssociation1c:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref TestPublicSubnet1c
+        RouteTableId: !Ref TestPublicRouteTable1c
+
+  # RouteTable-public-1d
+    TestPublicRouteTable1d:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref  TestVPC
+        Tags:
+          - Key: Name
+            Value: !Sub  test-public-rtb-1d
+
+    TestPublicRoute1d:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId: !Ref  TestPublicRouteTable1d
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId: !Ref  TestInternetGateway
+
+  # SubnetPublic to attach 1d
+    TestPublicSubnetRouteTableAssociation1d:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref TestPublicSubnet1d
+        RouteTableId: !Ref TestPublicRouteTable1d
+# ------------------------------------------------------------#
+# Protected Layer Route
+# ------------------------------------------------------------# 
+  # RouteTable-protected-1a
+    TestProtectedRouteTable1a:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref  TestVPC
+        Tags:
+          - Key: Name
+            Value: !Sub  test-protected-rtb-1a
+    TestProtectedRoute1a:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId: !Ref  TestProtectedRouteTable1a
+        DestinationCidrBlock: 0.0.0.0/0
+        NatGatewayId: !Ref NatGateway1
+  # SubnetProtected to attach 1a
+    TestProtectedSubnetRouteTableAssociation1a:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref TestProtectedSubnet1a
+        RouteTableId: !Ref TestProtectedRouteTable1a
+
+  # RouteTable-protected-1c
+    TestProtectedRouteTable1c:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref  TestVPC
+        Tags:
+          - Key: Name
+            Value: !Sub  test-protected-rtb-1c
+    TestProtectedRoute1c:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId: !Ref  TestProtectedRouteTable1c
+        DestinationCidrBlock: 0.0.0.0/0
+        NatGatewayId: !Ref NatGateway1
+  # SubnetProtected to attach 1c
+    TestProtectedSubnetRouteTableAssociation1c:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref TestProtectedSubnet1c
+        RouteTableId: !Ref TestProtectedRouteTable1c
+
+  # RouteTable-protected-1d
+    TestProtectedRouteTable1d:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref  TestVPC
+        Tags:
+          - Key: Name
+            Value: !Sub  test-protected-rtb-1d
+    TestProtectedRoute1d:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId: !Ref  TestProtectedRouteTable1d
+        DestinationCidrBlock: 0.0.0.0/0
+        NatGatewayId: !Ref NatGateway1
+  # SubnetProtected to attach 1d
+    TestProtectedSubnetRouteTableAssociation1d:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref TestProtectedSubnet1d
+        RouteTableId: !Ref TestProtectedRouteTable1d
+# ------------------------------------------------------------#
+# Private Layer Route
+# ------------------------------------------------------------# 
+  # RouteTable-private-1a
+    TestPrivateRouteTable1a:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref  TestVPC
+        Tags:
+          - Key: Name
+            Value: !Sub  test-private-rtb-1a
+
+  # SubnetPrivate to attach 1a
+    TestPrivateSubnetRouteTableAssociation1a:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref TestPrivateSubnet1a
+        RouteTableId: !Ref TestPrivateRouteTable1a
+
+  # RouteTable-private-1c
+    TestPrivateRouteTable1c:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref  TestVPC
+        Tags:
+          - Key: Name
+            Value: !Sub  test-private-rtb-1c
+
+  # SubnetPrivate to attach 1c
+    TestPrivateSubnetRouteTableAssociation1c:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref TestPrivateSubnet1c
+        RouteTableId: !Ref TestPrivateRouteTable1c
+
+  # RouteTable-private-1d
+    TestPrivateRouteTable1d:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId: !Ref  TestVPC
+        Tags:
+          - Key: Name
+            Value: !Sub  test-private-rtb-1d
+
+  # SubnetPrivate to attach 1d
+    TestPrivateSubnetRouteTableAssociation1d:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId: !Ref TestPrivateSubnet1d
+        RouteTableId: !Ref TestPrivateRouteTable1d
+
+  #Create Security-group protected
+    EC2SecurityGroupProtected: 
+        Type: AWS::EC2::SecurityGroup 
+        Properties: 
+          GroupDescription: "allow connections from specified CIDR ranges" 
+          GroupName: devops-protected-sg 
+          VpcId: !Ref TestVPC
+          SecurityGroupIngress: 
+          - IpProtocol: tcp
+            FromPort: 80 
+            ToPort: 80 
+            SourceSecurityGroupId: !Ref ALBSecurityGroup
+            Description: "Connect for ALB"   
+  #Create EC2 Instance1a
+    MyEC2Instance1a:
+      Type: AWS::EC2::Instance 
+      Properties: 
+        ImageId: "ami-079a2a9ac6ed876fc"      # Amazon Linux 2023 AMI 2023.0.20230329.0 x86_64 HVM kernel-6.1
+        InstanceType: "t2.micro" 
+        AvailabilityZone: ap-northeast-1a     # アベイラビリティの指定 
+        NetworkInterfaces: 
+          - AssociatePublicIpAddress: "false" 
+            DeviceIndex: '0' 
+            SubnetId: !Ref TestProtectedSubnet1a
+            GroupSet:
+              - !Ref EC2SecurityGroupProtected
+        KeyName: "230405-pair-test-imanishi"        # 既存のキーペアの指定 
+        BlockDeviceMappings: 
+          - DeviceName: "/dev/sdm" 
+            Ebs: 
+              VolumeType: "gp2"               # 汎用SSD（gp2） 
+              DeleteOnTermination: "false" 
+              VolumeSize: "8"                 # ディスクサイズ8GB 
+          - DeviceName: "/dev/sdk" 
+            NoDevice: {} 
+        IamInstanceProfile: !Ref EC2InstanceProfile
+        Tags: 
+          - Key: Name 
+            Value: devops-test-ec2-1a
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+            sudo yum update -y
+            sudo yum -y install httpd
+            sudo systemctl start httpd.service
+            sudo systemctl enable httpd.service
+            sudo touch /var/www/html/index.html
+            sudo echo "<html>EC2-A</html>" > /var/www/html/index.html
+            sudo yum install -y mariadb105
+  #Create EC2 Instance1c
+    MyEC2Instance1c:
+      Type: AWS::EC2::Instance 
+      Properties: 
+        ImageId: "ami-079a2a9ac6ed876fc"      # Amazon Linux 2023 AMI 2023.0.20230329.0 x86_64 HVM kernel-6.1
+        InstanceType: "t2.micro" 
+        AvailabilityZone: ap-northeast-1c     # アベイラビリティの指定 
+        NetworkInterfaces: 
+          - AssociatePublicIpAddress: "false" 
+            DeviceIndex: '0' 
+            SubnetId: !Ref TestProtectedSubnet1c
+            GroupSet:
+              - !Ref EC2SecurityGroupProtected
+        KeyName: "230405-pair-test-imanishi"        # 既存のキーペアの指定 
+        BlockDeviceMappings: 
+          - DeviceName: "/dev/sdm" 
+            Ebs: 
+              VolumeType: "gp2"               # 汎用SSD（gp2） 
+              DeleteOnTermination: "false" 
+              VolumeSize: "8"                 # ディスクサイズ8GB 
+          - DeviceName: "/dev/sdk" 
+            NoDevice: {} 
+        IamInstanceProfile: !Ref EC2InstanceProfile
+        Tags: 
+          - Key: Name 
+            Value: devops-test-ec2-1c
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+            sudo yum update -y
+            sudo yum -y install httpd
+            sudo systemctl start httpd.service
+            sudo systemctl enable httpd.service
+            sudo touch /var/www/html/index.html
+            sudo echo "<html>EC2-C</html>" > /var/www/html/index.html
+            sudo yum install -y mariadb105
+  #Create EC2 Instance1d
+    MyEC2Instance1d:
+      Type: AWS::EC2::Instance 
+      Properties: 
+        ImageId: "ami-079a2a9ac6ed876fc"      # Amazon Linux 2023 AMI 2023.0.20230329.0 x86_64 HVM kernel-6.1
+        InstanceType: "t2.micro" 
+        AvailabilityZone: ap-northeast-1d     # アベイラビリティの指定 
+        NetworkInterfaces: 
+          - AssociatePublicIpAddress: "false" 
+            DeviceIndex: '0' 
+            SubnetId: !Ref TestProtectedSubnet1d
+            GroupSet:
+              - !Ref EC2SecurityGroupProtected
+        KeyName: "230405-pair-test-imanishi"        # 既存のキーペアの指定 
+        BlockDeviceMappings: 
+          - DeviceName: "/dev/sdm" 
+            Ebs: 
+              VolumeType: "gp2"               # 汎用SSD（gp2） 
+              DeleteOnTermination: "false" 
+              VolumeSize: "8"                 # ディスクサイズ8GB 
+          - DeviceName: "/dev/sdk" 
+            NoDevice: {} 
+        IamInstanceProfile: !Ref EC2InstanceProfile
+        Tags: 
+          - Key: Name 
+            Value: devops-test-ec2-1d
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+            sudo yum update -y
+            sudo yum -y install httpd
+            sudo systemctl start httpd.service
+            sudo systemctl enable httpd.service
+            sudo touch /var/www/html/index.html
+            sudo echo "<html>EC2-D</html>" > /var/www/html/index.html
+            sudo yum install -y mariadb105
+    EC2InstanceProfile:
+      Type: AWS::IAM::InstanceProfile
+      Properties:
+        Path: /
+        Roles:
+          - Ref: S3SSMAccessRole
+        InstanceProfileName: !Sub ${PJPrefix}-EC2InstanceProfile
+  # ------------------------------------------------------------#
+  #  Create ALB
+  # ------------------------------------------------------------#
+  #Create ALB SecurityGroup
+    ALBSecurityGroup:
+      Type: "AWS::EC2::SecurityGroup"
+      Properties:
+          GroupDescription: "ALB SG"
+          GroupName: "alb-sg-231201"
+          VpcId: !Ref TestVPC
+          Tags:
+            - Key: Name
+              Value: "alb-sg-231201"
+          SecurityGroupIngress:
+            - IpProtocol: tcp
+              FromPort: 80
+              ToPort: 80
+              CidrIp: 0.0.0.0/0
+  #Create ALB
+    TESTALB:
+      Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      Properties:
+        Type: "application"
+        Scheme: "internet-facing"
+        Name: test-231201-alb
+        Tags:
+          - Key: Name
+            Value: test-231201-alb
+        IpAddressType: ipv4
+        Subnets: 
+          - !Ref TestPublicSubnet1a
+          - !Ref TestPublicSubnet1c
+          - !Ref TestPublicSubnet1d
+        SecurityGroups: 
+          - !Ref ALBSecurityGroup
+
+    ListenerHTTP:
+      Type: AWS::ElasticLoadBalancingV2::Listener
+      Properties:
+        DefaultActions:
+          - Type: forward
+            TargetGroupArn: !Ref TargetGroup
+        LoadBalancerArn: !Ref TESTALB
+        Port: 80
+        Protocol: HTTP
+    
+    TargetGroup:
+      Type: AWS::ElasticLoadBalancingV2::TargetGroup
+      Properties:
+        Name: !Sub ${AWS::StackName}-tg
+        Tags:
+          - Key: Name
+            Value: !Sub ${AWS::StackName}-tg
+        Port: 80
+        Protocol: HTTP
+        Matcher:
+          HttpCode: '200'
+        VpcId: !Ref TestVPC
+        TargetType: instance
+        Targets:
+          - Id: !Ref MyEC2Instance1a
+          - Id: !Ref MyEC2Instance1c
+          - Id: !Ref MyEC2Instance1d
+  # ------------------------------------------------------------#
+  #  Create VPC endpoint Security Group
+  # ------------------------------------------------------------#
+    EndpointSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: EndpointSecurityGroup
+        VpcId: !Ref TestVPC
+        Tags:
+          - Key: Name
+            Value: !Sub ${PJPrefix}-EndpointSecurityGroup
+        SecurityGroupIngress:
+          - IpProtocol: tcp
+            FromPort: 443
+            ToPort: 443
+            CidrIp: !GetAtt TestVPC.CidrBlock
+  # ------------------------------------------------------------#
+  #  Create VPC endpoint for SSM
+  # ------------------------------------------------------------#
+    EndpointSSM:
+      Type: AWS::EC2::VPCEndpoint
+      Properties:
+        PrivateDnsEnabled: true
+        SecurityGroupIds:
+          - !Ref EndpointSecurityGroup
+        ServiceName: !Sub com.amazonaws.${AWS::Region}.ssm
+        SubnetIds:
+          - !Ref TestProtectedSubnet1a
+          - !Ref TestProtectedSubnet1c
+          - !Ref TestProtectedSubnet1d
+        VpcEndpointType: Interface
+        VpcId: !Ref TestVPC
+
+    EndpointSSMMessages:
+      Type: AWS::EC2::VPCEndpoint
+      Properties:
+        PrivateDnsEnabled: true
+        SecurityGroupIds:
+          - !Ref EndpointSecurityGroup
+        ServiceName: !Sub com.amazonaws.${AWS::Region}.ssmmessages
+        SubnetIds:
+          - !Ref TestProtectedSubnet1a
+          - !Ref TestProtectedSubnet1c
+          - !Ref TestProtectedSubnet1d
+        VpcEndpointType: Interface
+        VpcId: !Ref TestVPC
+
+    EndpointEC2Messages:
+      Type: AWS::EC2::VPCEndpoint
+      Properties:
+        PrivateDnsEnabled: true
+        SecurityGroupIds:
+          - !Ref EndpointSecurityGroup
+        ServiceName: !Sub com.amazonaws.${AWS::Region}.ec2messages
+        SubnetIds:
+          - !Ref TestProtectedSubnet1a
+          - !Ref TestProtectedSubnet1c
+          - !Ref TestProtectedSubnet1d
+        VpcEndpointType: Interface
+        VpcId: !Ref TestVPC
+  # ------------------------------------------------------------#
+  #  Create VPC endpoint for S3
+  # ------------------------------------------------------------#
+    VPCS3Endpoint01:
+      Type: AWS::EC2::VPCEndpoint
+      Properties:
+        RouteTableIds: 
+          - !Ref TestProtectedRouteTable1a
+          - !Ref TestProtectedRouteTable1c
+          - !Ref TestProtectedRouteTable1d
+        ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
+        VpcId: !Ref TestVPC
+  # ------------------------------------------------------------#
+  # Attached IAM role for EC2 (allowed access SSM and S3)
+  # ------------------------------------------------------------# 
+    S3SSMAccessRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement: 
+            - 
+              Effect: "Allow"
+              Principal: 
+                Service: 
+                  - "ec2.amazonaws.com"
+              Action: 
+                - "sts:AssumeRole"
+        Path: "/"
+        ManagedPolicyArns:
+          - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+          - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+          - "arn:aws:iam::aws:policy/AmazonRedshiftFullAccess"
+  # ------------------------------------------------------------#
+  # Create Nat Gateway
+  # ------------------------------------------------------------# 
+    NatGateway1:
+      Type: AWS::EC2::NatGateway
+      Properties:
+        AllocationId: !GetAtt NatGatewayEIP1.AllocationId
+        SubnetId: !Ref TestPublicSubnet1a
+        Tags:
+          - Key: Name
+            Value: !Sub ${PJPrefix}-ngw1
+    NatGatewayEIP1:
+      Type: AWS::EC2::EIP
+      Properties:
+        Domain: TestVPC
+  # ------------------------------------------------------------#
+  # Create Red Shift Serverless
+  # ------------------------------------------------------------# 
+    RedshiftServerlessWorkGroup:
+      Type: AWS::RedshiftServerless::Workgroup
+      Properties: 
+        WorkgroupName: !Ref RSWorkgroupName
+        BaseCapacity: !Ref RSBaseCapacity
+        EnhancedVpcRouting: !Ref RSEnhancedVpcRouting
+        NamespaceName: !Ref RedshiftServerlessNamespace
+        PubliclyAccessible: !Ref RSPubliclyAccessible
+        SecurityGroupIds:
+          - !Ref RSSecurityGroup
+        SubnetIds:
+          - !Ref TestPrivateSubnet1a
+          - !Ref TestPrivateSubnet1c
+          - !Ref TestPrivateSubnet1d
+        ConfigParameters: 
+          - ParameterKey: "search_path"
+            ParameterValue: "$user"
+    RedshiftServerlessNamespace:
+      Type: AWS::RedshiftServerless::Namespace
+      Properties: 
+        NamespaceName: !Ref RSNamespaceName
+        AdminUsername: !Ref RSAdminUsername
+        AdminUserPassword: !Ref RSAdminUserPassword
+        KmsKeyId: !Ref RSKmsKeyId
+        DbName: !Ref RSDbName
+        IamRoles:
+        - Fn::GetAtt:
+          - RedshiftServerlessRole
+          - Arn
+
+    RedshiftServerlessRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: !Sub "AmazonRedshiftServerlessRole-${RSNamespaceName}"
+        Path: "/"
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: 
+                  - redshift-serverless.amazonaws.com
+                  - redshift.amazonaws.com
+                  - sagemaker.amazonaws.com
+              Action: "sts:AssumeRole"
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AmazonRedshiftAllCommandsFullAccess
+          - !Ref AmazonRedshiftCommandsAccessPolicy
+    AmazonRedshiftCommandsAccessPolicy:
+      Type: AWS::IAM::ManagedPolicy
+      Properties:
+        ManagedPolicyName: !Sub "AmazonRedshiftCommandsAccessPolicy-${RSNamespaceName}"
+        Description: Policy allowing access to S3
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:GetObject
+            - s3:GetBucketAcl
+            - s3:GetBucketCors
+            - s3:GetEncryptionConfiguration
+            - s3:GetBucketLocation
+            - s3:ListBucket
+            - s3:ListAllMyBuckets
+            - s3:ListMultipartUploadParts
+            - s3:ListBucketMultipartUploads
+            - s3:PutObject
+            - s3:PutBucketAcl
+            - s3:PutBucketCors
+            - s3:DeleteObject
+            - s3:AbortMultipartUpload
+            - s3:CreateBucket
+            Resource: arn:aws:s3:::*
+
+    #Create Security-group protected
+    RSSecurityGroup: 
+      Type: AWS::EC2::SecurityGroup 
+      Properties: 
+        GroupDescription: "allow connections from Protected EC2" 
+        GroupName: devops-redshift-sg 
+        VpcId: !Ref TestVPC
+        SecurityGroupIngress: 
+          - IpProtocol: tcp
+            FromPort: 5439
+            ToPort: 5439
+            SourceSecurityGroupId: !Ref EC2SecurityGroupProtected
+            Description: "Connect for EC2"  
